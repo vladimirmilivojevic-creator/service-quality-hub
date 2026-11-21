@@ -1,9 +1,10 @@
 """ServiceQualityHub API: SLA and service quality for a multi-site IT organisation."""
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
@@ -28,15 +29,33 @@ from app.seed import seed_if_empty
 logging.basicConfig(level=logging.INFO)
 
 
+_ready = False
+_ready_lock = asyncio.Lock()
+
+
+async def prepare_database() -> None:
+    """Create tables and demo data once per process.
+
+    Runs at startup, and again on the first request if the platform did not send the startup event
+    (serverless platforms do not always run the ASGI lifespan).
+    """
+    global _ready
+    async with _ready_lock:
+        if _ready:
+            return
+        if settings.auto_create_tables:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+        if settings.seed_demo_data:
+            async with SessionLocal() as db:
+                if await seed_if_empty(db):
+                    logging.info("Demo data created")
+        _ready = True
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if settings.auto_create_tables:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-    if settings.seed_demo_data:
-        async with SessionLocal() as db:
-            if await seed_if_empty(db):
-                logging.info("Demo data created")
+    await prepare_database()
     yield
 
 
@@ -57,6 +76,14 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["Content-Disposition"],
 )
+
+
+@app.middleware("http")
+async def ensure_database(request: Request, call_next):
+    if not _ready and request.url.path != "/health":
+        await prepare_database()
+    return await call_next(request)
+
 
 for router in (
     auth.router,

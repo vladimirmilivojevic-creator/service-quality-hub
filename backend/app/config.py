@@ -1,5 +1,7 @@
 """Application settings, read from environment variables (or a local .env file)."""
 
+import os
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,7 +31,9 @@ class Settings(BaseSettings):
 
     # SQLite works out of the box for local development, PostgreSQL in Docker / production.
     database_url: str = "sqlite+aiosqlite:///./servicequality.db"
-    db_pool: bool = True  # tests switch pooling off because every test gets a fresh event loop
+    # No connection pool in tests (fresh event loop per test) and on serverless platforms (Vercel sets VERCEL=1),
+    # where a pool would outlive the request; Neon handles short connections well.
+    db_pool: bool = not os.environ.get("VERCEL")
 
     jwt_secret: str = "dev-only-secret-change-me-in-production"
     jwt_expire_minutes: int = 8 * 60  # one working shift
@@ -37,7 +41,7 @@ class Settings(BaseSettings):
 
     cors_origins: str = "http://localhost:3000"
 
-    auto_create_tables: bool = True  # dev convenience; production runs Alembic migrations instead
+    auto_create_tables: bool = True  # the Docker image runs Alembic migrations instead (AUTO_CREATE_TABLES=false)
     seed_demo_data: bool = True
 
     max_upload_mb: int = 5
