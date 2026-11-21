@@ -1,0 +1,19 @@
+# Render Blueprint for the API (free plan). PostgreSQL comes from Neon (free, does not expire).
+services:
+  - type: web
+    name: service-quality-hub-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    buildFilter:
+      paths: ["backend/**"]
+    plan: free
+    region: frankfurt
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false # set in the dashboard: the Neon connection string (without connection pooling)
+      - key: CORS_ORIGINS
+        sync: false # the dashboard URL, e.g. https://service-quality-hub.vercel.app
+      - key: JWT_SECRET
+        generateValue: true

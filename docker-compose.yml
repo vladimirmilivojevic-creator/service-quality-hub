@@ -1,0 +1,37 @@
+# Full stack locally: PostgreSQL, FastAPI and Next.js.
+#   docker compose up --build
+# Dashboard: http://localhost:3000   API docs: http://localhost:8000/docs
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sqh
+      POSTGRES_PASSWORD: sqh
+      POSTGRES_DB: sqh
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sqh"]
+      interval: 3s
+      retries: 20
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://sqh:sqh@db:5432/sqh
+      JWT_SECRET: ${JWT_SECRET:-local-docker-secret}
+      CORS_ORIGINS: http://localhost:3000
+    ports: ["8000:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports: ["3000:3000"]
+    depends_on: [api]
+
+volumes:
+  pgdata:
