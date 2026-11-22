@@ -23,6 +23,10 @@ with supplier scorecards, problem candidates, an improvement register and a one-
 
 </div>
 
+<p align="center">
+  <img src="docs/demo.gif" alt="Dashboard, a supplier below its contract, problem candidates and the monthly service review" width="960">
+</p>
+
 > [!NOTE]
 > The company **Valdora Machinery Group**, its five plants, people, suppliers and all numbers are **fictional**.
 > The demo runs on free hosting (Vercel + Neon PostgreSQL). After a quiet period the database wakes up on the first
@@ -82,6 +86,14 @@ Then try **"Simulate next day ▶"** (the demo has its own clock) and **"Generat
 | 11 live services + pipeline and retired ones; default SLA policy per priority with service exceptions (MES has tighter P1/P2 targets) | Support-hour calendars (24x7, shift, office) in each plant's time zone (Austria, Germany, France, Brazil), pauses, due dates, daylight-saving safe | Six KPI cards with ⓘ definitions, RAG colours, change vs last month, six-month sparklines; plants side by side |
 | **Supplier scorecards** | **Problem candidates** | **Monthly service review & CSI register** |
 | Central provider, plant IT teams (OLA) and vendors (contract) on one chart; trend, breaches, top services with breaches, P1s | ≥ 3 similar incidents (same plant + service + category) in 14 days → candidate → one-click problem with linked incidents | Ten-section review (summary, KPIs, plants, suppliers, breaches, P1s, problems, changes, improvements, next actions); PDF and Excel |
+
+## Screenshots
+
+| Dashboard | Supplier scorecards |
+|---|---|
+| ![Dashboard with KPI cards and RAG colours](docs/screenshots/dashboard.png) | ![Scorecards: central provider, plant IT teams and vendors](docs/screenshots/suppliers.png) |
+| **Problem candidates** | **Monthly service review** |
+| ![Recurring incidents flagged as problem candidates](docs/screenshots/problems.png) | ![One-click monthly service review](docs/screenshots/monthly-review.png) |
 
 ## Architecture
 
@@ -185,6 +197,8 @@ In Jira: *Filters → Export → Export CSV (all fields)*, then upload the file 
 - **One SLA engine for all sources**: JSM's own SLA fields are kept only as a reference note, so plants stay comparable.
 
 A sample export with fictional data is in [`samples/jsm_export_sample.csv`](samples/jsm_export_sample.csv).
+
+![Import preview with mapped rows and skipped rows](docs/screenshots/import-preview.png)
 
 ## API overview
 
