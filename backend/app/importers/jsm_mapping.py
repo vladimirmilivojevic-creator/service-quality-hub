@@ -15,9 +15,12 @@ COLUMN_PRIORITY = "Priority"
 COLUMN_CREATED = "Created"
 COLUMN_RESOLVED = "Resolved"
 COLUMN_REQUEST_TYPE = "Custom field (Request Type)"
-# Jira's built-in "Date of First Response" field, if the site exports it.
+# Jira's built-in "Date of First Response" field, if the site exports it. Unlike "Created", Jira writes this
+# field in UTC with milliseconds (e.g. "2026-11-22 15:20:19.743").
 COLUMNS_FIRST_RESPONSE = ["Custom field ([CHART] Date of First Response)", "Custom field (Date of First Response)"]
+FIRST_RESPONSE_TIMEZONE = "UTC"
 # JSM's own SLA fields: kept as a reference note only. Our engine calculates the SLA itself.
+# In an export they show the remaining time as hours:minutes; a negative value means breached ("-49:30").
 COLUMNS_JSM_SLA = ["Custom field (Time to first response)", "Custom field (Time to resolution)"]
 
 # Where to find the plant: the first column that contains a known plant name or code wins.
@@ -34,6 +37,8 @@ ISSUE_TYPES = {
     "[system] service request": "request",
     "service request with approvals": "request",
     "[system] service request with approvals": "request",
+    "it help": "request",
+    "[system] it help": "request",
     "problem": "problem",
     "[system] problem": "problem",
     "change": "change",
@@ -51,6 +56,7 @@ STATUSES = {
     "work in progress": "In progress",
     "escalated": "In progress",
     "under investigation": "In progress",
+    "reopened": "In progress",
     "awaiting implementation": "In progress",
     "implementing": "In progress",
     "waiting for customer": "Pending",
@@ -107,6 +113,9 @@ REQUEST_TYPE_SERVICES = {
     "get it help": None,
     "report an incident": None,
     "report a system problem": None,
+    "report broken hardware": "Workplace (PCs & laptops)",
+    "request admin access": "Identity & access (accounts, VPN)",
+    "onboard new employees": "Identity & access (accounts, VPN)",
     "ask a question": None,
 }
 
@@ -118,6 +127,7 @@ DATE_FORMATS = [
     "%Y-%m-%d %H:%M",
     "%Y-%m-%d %H:%M:%S",
     "%Y-%m-%dT%H:%M:%S",
+    "%Y-%m-%d %H:%M:%S.%f",
     "%d.%m.%Y %H:%M",
     "%d.%m.%y %H:%M",
     "%m/%d/%Y %H:%M",

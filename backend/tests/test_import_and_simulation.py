@@ -120,3 +120,27 @@ def test_simulation_is_deterministic_and_reset_returns_to_start(client, sqm):
     assert {k: first[k] for k in ("created", "resolved", "changes")} == {
         k: again[k] for k in ("created", "resolved", "changes")
     }
+
+
+REAL_EXPORT = SAMPLES / "jsm_export_real_anonymized.csv"
+
+
+def test_real_jsm_cloud_export(client, sqm):
+    """A real export from a Jira Service Management Free site (names and ids removed)."""
+    preview = upload(client, sqm, REAL_EXPORT.read_bytes(), "/imports/jsm/preview").json()
+    assert preview["total_rows"] == 23
+    assert preview["valid_rows"] == 16  # VSD-7 ... VSD-22; the 7 onboarding samples have no plant
+    assert sum("no plant found" in s["message"] for s in preview["skipped"]) == 7
+    assert any("dated after the demo clock" in w for w in preview["warnings"])
+    rows = {r["key"]: r for r in preview["rows"]}
+    assert rows["VSD-7"]["plant_code"] == "INN" and rows["VSD-7"]["service_name"].startswith("MES")
+    assert rows["VSD-10"]["priority"] == 1 and rows["VSD-10"]["service_name"] == "WAN connectivity"
+
+    result = upload(client, sqm, REAL_EXPORT.read_bytes()).json()
+    assert (result["created"], result["updated"]) == (16, 0)
+    tickets = {t["key"]: t for t in client.get("/tickets?q=VSD-&size=50", headers=sqm).json()["items"]}
+    assert tickets["VSD-14"]["status"] == "In progress"  # reopened in JSM
+    assert tickets["VSD-20"]["status"] == "Pending"  # waiting for customer
+    assert tickets["VSD-18"]["type"] == "request" and tickets["VSD-18"]["resolved_at"]
+    assert tickets["VSD-7"]["resolution_breached"] is True  # resolved days later than the 8 h target
+    assert "Time to resolution: -42:00" in tickets["VSD-7"]["source_sla_note"]

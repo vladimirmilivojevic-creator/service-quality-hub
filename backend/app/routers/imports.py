@@ -8,7 +8,7 @@ from app.config import settings
 from app.deps import DB, ManagerUser
 from app.importers import jsm
 from app.schemas import ImportPreview, ImportPreviewRow, ImportResult
-from app.services import load_catalogue
+from app.services import demo_now, load_catalogue
 
 router = APIRouter(prefix="/imports/jsm", tags=["imports"])
 
@@ -29,7 +29,7 @@ async def _map(db: DB, file: UploadFile, timezone: str) -> jsm.MappingResult:
         frame = jsm.read_csv(await _read(file))
         if len(frame) > settings.max_import_rows:
             raise HTTPException(413, f"The file has more than {settings.max_import_rows} rows")
-        return jsm.map_rows(frame, await load_catalogue(db), timezone)
+        return jsm.map_rows(frame, await load_catalogue(db), timezone, now=await demo_now(db))
     except jsm.ImportFileError as error:
         raise HTTPException(422, str(error)) from error
 

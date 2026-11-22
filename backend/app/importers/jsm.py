@@ -111,12 +111,15 @@ def _normalise(text: str) -> str:
     return text.strip().lower()
 
 
-def map_rows(frame: pd.DataFrame, catalogue: Catalogue, timezone: str = m.DEFAULT_TIMEZONE) -> MappingResult:
+def map_rows(
+    frame: pd.DataFrame, catalogue: Catalogue, timezone: str = m.DEFAULT_TIMEZONE, now: datetime | None = None
+) -> MappingResult:
     try:
         tz = ZoneInfo(timezone)
     except ZoneInfoNotFoundError as error:
         raise ImportFileError(f"Unknown time zone '{timezone}'") from error
 
+    first_response_tz = ZoneInfo(m.FIRST_RESPONSE_TIMEZONE)
     plant_aliases: dict[str, int] = {}
     for plant in catalogue.plants.values():
         for alias in (plant.code, plant.name, plant.name.removesuffix(" Works")):
@@ -187,7 +190,8 @@ def map_rows(frame: pd.DataFrame, catalogue: Catalogue, timezone: str = m.DEFAUL
             created_at = parse_date(str(row[m.COLUMN_CREATED]), tz)
             resolved_at = parse_date(str(row[m.COLUMN_RESOLVED]), tz) if has_resolved else None
             first_response_at = next(
-                (parse_date(str(row[c]), tz) for c in first_response_columns if str(row[c]).strip()), None
+                (parse_date(str(row[c]), first_response_tz) for c in first_response_columns if str(row[c]).strip()),
+                None,
             )
         except ValueError as error:
             skip(f"{key}: {error}")
@@ -241,6 +245,13 @@ def map_rows(frame: pd.DataFrame, catalogue: Catalogue, timezone: str = m.DEFAUL
             "(the resolution SLA is)."
         )
     warnings.append("Pending time is not part of a CSV export: the resolution SLA counts the full support time.")
+    if now is not None:
+        newer = sum(1 for r in rows if r.created_at > now)
+        if newer:
+            warnings.append(
+                f"{newer} tickets are dated after the demo clock ({now:%d %b %Y}); "
+                "they count in the KPIs of the month they belong to."
+            )
     detected = {
         "separator/encoding": "detected automatically",
         "plant": ", ".join(f"{k} ({v} rows)" for k, v in plant_found_in.items()) or "not found",

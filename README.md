@@ -198,6 +198,19 @@ In Jira: *Filters → Export → Export CSV (all fields)*, then upload the file 
 
 A sample export with fictional data is in [`samples/jsm_export_sample.csv`](samples/jsm_export_sample.csv).
 
+**Tested with a real Jira Service Management Free site.** I set up a service space with the IT service management
+template, SLA goals per priority on a business-hours calendar (Mon–Fri 07:00–17:00, Europe/Vienna, paused while
+*Waiting for customer*) and a queue for tickets at risk, created tickets that follow the demo stories (breaches, one
+*Waiting for customer*, one reopened), exported them with *Export → CSV – all fields* and imported the file. The
+anonymized export is in [`samples/jsm_export_real_anonymized.csv`](samples/jsm_export_real_anonymized.csv) and a test
+imports it ([`test_real_jsm_cloud_export`](backend/tests/test_import_and_simulation.py)). What the real export taught
+the importer: repeated `Labels` columns, `IT Help` and `Reopened` values, SLA fields as remaining time (`-49:30` =
+breached) and a first-response date written in UTC with milliseconds.
+
+| JSM SLA goals on a business-hours calendar | JSM queue "SLA at risk or breached" |
+|---|---|
+| ![SLA goals per priority in Jira Service Management](docs/screenshots/jsm-sla.png) | ![Queue of tickets at risk in Jira Service Management](docs/screenshots/jsm-queue.png) |
+
 ![Import preview with mapped rows and skipped rows](docs/screenshots/import-preview.png)
 
 ## API overview
